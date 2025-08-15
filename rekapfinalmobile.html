@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard KIB B - Responsive</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+  body { font-family: sans-serif; margin: 10px; background-color: #f9fafb; }
+  h1 { font-size: 1.5rem; margin-bottom: 10px; text-align: center; }
+  label { display: block; margin-top: 10px; font-size: 0.9rem; }
+  select, input { width: 100%; padding: 6px; margin-top: 4px; border-radius: 4px; border: 1px solid #ccc; }
+  
+  .dashboard { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+  .chart-container, table { background: white; border-radius: 8px; padding: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+  .chart-container { flex: 1 1 300px; }
+  canvas { width: 100% !important; height: 250px !important; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+  th { background-color: #3b82f6; color: white; font-size: 0.8rem; }
+  
+  .pagination { margin-top: 10px; text-align: center; }
+  .pagination button { margin: 0 2px; padding: 4px 8px; border-radius: 4px; border: none; background-color: #3b82f6; color: white; font-size: 0.8rem; cursor: pointer; }
+  .pagination button.disabled { background-color: #cbd5e1; cursor: not-allowed; }
+
+  @media (max-width: 768px) {
+    .dashboard { flex-direction: column; }
+    canvas { height: 200px !important; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Dashboard KIB B - DINAS PENDIDIKAN</h1>
+
+<label for="filterKecamatan">Filter Kecamatan:</label>
+<select id="filterKecamatan">
+  <option value="">--Pilih Kecamatan--</option>
+  <option value="Banawa" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vRd8vIhHDUbmD6I2aXLX7-_Ysemt2aXA__wKNGoKN0XWWSWCScv5aSmx06H0xkl8g/pub?gid=1917777904&single=true&output=csv">Banawa</option>
+  <option value="Banawa Tengah" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vRnykw5e_i3dwBIeTua-mpFExEJ4w6hROJ5F6OUHiiGpbtunldeKgXlhN_G-D1V8w/pub?gid=1454720232&single=true&output=csv">Banawa Tengah</option>
+  <option value="Banawa Selatan" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vRhDJK33BtCz7KEi6DWgqheZBrcdgK0X9Pw1r28u5ec1MK-I-kP-QOqrsY0G2OnEQ/pub?gid=708970016&single=true&output=csv">Banawa Selatan</option>
+  <option value="Rio Pakava" data-endpoint="">Rio Pakava</option>
+  <option value="Pinembani" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vQshgCYmG0DHxcwLUzhtUamXTYnWb8tR7WQwnJq9k7ldFz_JhV4GHDE-k_dMO_pSA/pub?gid=1860451546&single=true&output=csv">Pinembani</option>
+  <option value="Tanantovea" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vR3MhjBMD3q8UIfOTdAUOHKMdeGcwr3y2YQGFcDmHDd0IVsOsAECl511LsNJ9ynow9cmY4yBpP1jENa/pub?gid=1200528899&single=true&output=csv">Tanantovea</option>
+  <option value="Labuan" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vT7WqNsmpUBIy0-lVm2JdGg1KUKwNgQPpbSyDuuFDwB1aGPY8gsZSBWmxIgiOeJNA/pub?gid=1615242439&single=true&output=csv">Labuan</option>
+  <option value="Sindue" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2sjcmJjTCYD3p6-7pDQTmm3mCVphZIP2-5DGZOHxStucexMcdqPVsfsbnDouFcA/pub?gid=1920885371&single=true&output=csv">Sindue</option>
+  <option value="Sindue Tombusabora" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vRYHOyrOQ_hNjC1L1FoIMVbbWES0dPGb1OaU6V--PV_lm0O97IHFvtPRhgRNXn_dA/pub?gid=1974330298&single=true&output=csv">Sindue Tombusabora</option>
+  <option value="Sindue Tobata" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vQIbvzs-jZRcf1z0uV_Ahwh6dNdBgBHw66T358D9wd0-DHimDs8r4ajCvZwLa8Srg/pub?gid=801352666&single=true&output=csv">Sindue Tobata</option>
+  <option value="Sirenja" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vROhU6H6reNQxHKsAmYYgfcaSZyis1vALTmBkYhjAp7BGX_wNdA2cVdgOjFQIIgjQ/pub?output=csv">Sirenja</option>
+  <option value="Balaesang" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vQIf6mV6qgS6fmRe3jz305N8wCDdKWJcKKWSxHtybbo7xoERx15unD-x4rgyFxF-g/pub?gid=1401841928&single=true&output=csv">Balaesang</option>
+  <option value="Balaesang Tanjung" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vQRojLHXJ4W6IEdiNn34kZrMgr5QvPZllm85-sbgD0WxjG6vFMUMQz3QzzGnM-7pw/pub?gid=820099832&single=true&output=csv">Balaesang Tanjung</option>
+  <option value="Dampelas" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vR_BmCgfv-HOMRKzNMZ1aHL05CZsR7Ie0VZGRJTD29tX1C-ANiKASW1hB_PM69WuQ/pub?gid=1489077321&single=true&output=csv">Dampelas</option>
+  <option value="Sojol" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vT64A3AbrmT4TK8fLj5ctUc3LLMESXVTOuw3nBd2qRTEFIljaxTBW3-Z5u4w7W2Ng/pub?gid=1781390946&single=true&output=csv">Sojol</option>
+  <option value="Sojol Utara" data-endpoint="https://docs.google.com/spreadsheets/d/e/2PACX-1vT41KwECicPb2EY8d8BP1f73RM3dhVWYDOxpaFlHZluKFy9owLzyVX7N7mIUm37Tw/pub?gid=502544387&single=true&output=csv">Sojol Utara</option>
+</select>
+
+<label for="searchBarang">Cari Nama Barang:</label>
+<input type="text" id="searchBarang" placeholder="Masukkan nama barang...">
+
+<div class="dashboard">
+  <div class="chart-container">
+    <h2 style="font-size:1rem;">Konfirmasi Keberadaan</h2>
+    <canvas id="chartKonfirmasi"></canvas>
+  </div>
+  <div class="chart-container">
+    <h2 style="font-size:1rem;">Kondisi Barang</h2>
+    <canvas id="chartKondisi"></canvas>
+  </div>
+</div>
+
+<div class="chart-container" style="margin-top:15px;">
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>Nama Barang</th>
+        <th>Konfirmasi</th>
+        <th>Kondisi</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+let currentData = [];
+let filteredData = [];
+let currentPage = 1;
+const rowsPerPage = 8;
+let chartKonfirmasi, chartKondisi;
+
+function updateDashboard() {
+  const searchValue = document.getElementById("searchBarang").value.toLowerCase();
+  filteredData = currentData.filter(row => (row["Nama Barang"] || "").toLowerCase().includes(searchValue));
+  currentPage = 1;
+  renderTablePage(currentPage);
+  renderCharts(filteredData);
+}
+
+function renderTablePage(page) {
+  const tableBody = document.querySelector("#dataTable tbody");
+  tableBody.innerHTML = "";
+  const start = (page - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const pageData = filteredData.slice(start, end);
+
+  pageData.forEach((row, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${start + index + 1}</td>
+      <td>${row["Nama Barang"] || "-"}</td>
+      <td>${row["Konfirmasi Keberadaan"] || "Tidak Ditemukan"}</td>
+      <td>${row["Kondisi"] || "Baik"}</td>
+    `;
+    tableBody.appendChild(tr);
+  });
+  renderPagination();
+}
+
+function renderPagination() {
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+  const paginationDiv = document.getElementById("pagination");
+  paginationDiv.innerHTML = "";
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.disabled = i === currentPage;
+    if(i === currentPage) btn.classList.add("disabled");
+    btn.addEventListener("click", () => { currentPage = i; renderTablePage(currentPage); });
+    paginationDiv.appendChild(btn);
+  }
+}
+
+function renderCharts(data) {
+  const konfirmasiCounts = { Ditemukan: 0, "Tidak Ditemukan": 0 };
+  const kondisiCounts = { Baik: 0, "Rusak Ringan": 0, "Rusak Berat": 0 };
+
+  data.forEach(row => {
+    const konfirmasi = row["Konfirmasi Keberadaan"] || "Tidak Ditemukan";
+    const kondisi = row["Kondisi"] || "Baik";
+    if (konfirmasiCounts[konfirmasi] !== undefined) konfirmasiCounts[konfirmasi]++;
+    if (kondisiCounts[kondisi] !== undefined) kondisiCounts[kondisi]++;
+  });
+
+  const konfirmasiCtx = document.getElementById('chartKonfirmasi').getContext('2d');
+  if(chartKonfirmasi) chartKonfirmasi.destroy();
+  chartKonfirmasi = new Chart(konfirmasiCtx, {
+    type: 'pie',
+    data: {
+      labels: Object.keys(konfirmasiCounts),
+      datasets: [{ data: Object.values(konfirmasiCounts), backgroundColor: ['#3b82f6','#ef4444'] }]
+    }
+  });
+
+  const kondisiCtx = document.getElementById('chartKondisi').getContext('2d');
+  if(chartKondisi) chartKondisi.destroy();
+  chartKondisi = new Chart(kondisiCtx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(kondisiCounts),
+      datasets: [{ data: Object.values(kondisiCounts), backgroundColor: ['#10b981','#fbbf24','#ef4444'] }]
+    }
+  });
+}
+
+document.getElementById("filterKecamatan").addEventListener("change", function() {
+  const url = this.selectedOptions[0].dataset.endpoint;
+  if (!url) return alert("Data belum tersedia untuk kecamatan ini.");
+  Papa.parse(url, {
+    download: true,
+    header: true,
+    complete: function(results) {
+      currentData = results.data;
+      updateDashboard();
+    }
+  });
+});
+
+document.getElementById("searchBarang").addEventListener("input", updateDashboard);
+</script>
+
+</body>
+</html>
